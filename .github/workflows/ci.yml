@@ -55,9 +55,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build the Docker image
+        # Build Docker image
       - name: Build Docker image
-        run: docker build -t "$DOCKER_IMAGE_NAME" .
+        run: |
+          docker build -t "$DOCKER_IMAGE_NAME" .
+          docker images "$DOCKER_IMAGE_NAME"
 
       # Start the container and check that the application responds
       - name: Test Docker image locally

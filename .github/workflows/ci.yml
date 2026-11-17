@@ -25,6 +25,14 @@ jobs:
       - name: Run Gitleaks scan
         uses: zricethezav/gitleaks-action@v2
 
+       # Upload the Gitleaks report
+      - name: Upload Gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: results.sarif  
+
       # Install Java
       - name: Set up JDK 21
         uses: actions/setup-java@v3

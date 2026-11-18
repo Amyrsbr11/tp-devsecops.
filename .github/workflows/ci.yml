@@ -19,8 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Full history is required by Gitleaks
+          fetch-depth: 0 # Full history is required by Gitleaks and SonarCloud
 
+      # Gitleaks scan (before compilation)
       - name: Run Gitleaks scan
         uses: zricethezav/gitleaks-action@v2
         env:
@@ -48,6 +49,20 @@ jobs:
       # Build Maven
       - name: Build Java project with Maven
         run: mvn clean package
+
+      # Run SonarCloud scan (after Maven build: needs target/classes)
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.exclusions=target/**
 
       # Log in to Docker Hub
       - name: Login to Docker Hub
@@ -102,6 +117,7 @@ jobs:
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
-       # Push Docker 
+
+      # Push Docker image to Docker Hub (only if all security checks passed)
       - name: Push Docker image
         run: docker push "$DOCKER_IMAGE_NAME"

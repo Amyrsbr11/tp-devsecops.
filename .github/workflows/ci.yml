@@ -25,13 +25,13 @@ jobs:
       - name: Run Gitleaks scan
         uses: zricethezav/gitleaks-action@v2
 
-       # Upload the Gitleaks report
+      # Upload the Gitleaks report
       - name: Upload Gitleaks report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report
-          path: results.sarif  
+          path: results.sarif
 
       # Install Java
       - name: Set up JDK 21
@@ -55,12 +55,28 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-        # Build Docker image
+      # Build Docker image
       - name: Build Docker image
         run: |
           docker build -t "$DOCKER_IMAGE_NAME" .
           docker images "$DOCKER_IMAGE_NAME"
-        # Trivy report (JSON format, does not block the pipeline)
+
+      # Start the container and check that the application responds
+      - name: Test Docker image locally
+        run: |
+          docker run -d --name democyber-test -p 8080:8080 "$DOCKER_IMAGE_NAME"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8080/; then
+              docker rm -f democyber-test
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs democyber-test
+          docker rm -f democyber-test
+          exit 1
+
+      # Trivy report (JSON format, does not block the pipeline)
       - name: Trivy scan - generate report
         uses: aquasecurity/trivy-action@v0.35.0
         with:
@@ -76,7 +92,8 @@ jobs:
         with:
           name: trivy-report
           path: trivy-report.json
-          # Trivy scan
+
+      # Trivy scan (security gate: fails on CRITICAL/HIGH)
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.35.0
         with:
@@ -84,17 +101,3 @@ jobs:
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
-      # Start the container and check that the application responds
-      - name: Test Docker image locally
-        run: |
-          docker run -d --name democyber-test -p 8080:8080 "$DOCKER_IMAGE_NAME"
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://localhost:8080/; then
-              docker rm -f democyber-test
-              exit 0
-            fi
-            sleep 2
-          done
-          docker logs democyber-test
-          docker rm -f democyber-test
-          exit 1

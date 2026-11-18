@@ -23,7 +23,7 @@ jobs:
 
       # Gitleaks scan (before compilation)
       - name: Run Gitleaks scan
-        uses: zricethezav/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -52,7 +52,7 @@ jobs:
 
       # Run SonarCloud scan (after Maven build: needs target/classes)
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5.3.2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
@@ -63,10 +63,11 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.java.binaries=target/classes
             -Dsonar.exclusions=target/**
+            -Dsonar.qualitygate.wait=true
 
       # Log in to Docker Hub
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -94,7 +95,7 @@ jobs:
 
       # Trivy report (JSON format, does not block the pipeline)
       - name: Trivy scan - generate report
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: ${{ env.DOCKER_IMAGE_NAME }}
           format: 'json'
@@ -111,7 +112,7 @@ jobs:
 
       # Trivy scan (security gate: fails on CRITICAL/HIGH)
       - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: ${{ env.DOCKER_IMAGE_NAME }}
           format: 'table'

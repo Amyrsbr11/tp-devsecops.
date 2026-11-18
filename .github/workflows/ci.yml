@@ -21,9 +21,10 @@ jobs:
         with:
           fetch-depth: 0 # Full history is required by Gitleaks
 
-      # Gitleaks scan (before compilation)
       - name: Run Gitleaks scan
         uses: zricethezav/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Upload the Gitleaks report
       - name: Upload Gitleaks report
